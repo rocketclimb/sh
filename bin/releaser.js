@@ -49,6 +49,14 @@ const addChanges = (message) => {
   }
 };
 
+const pushChanges = () => {
+  try {
+    execSync(`git push`).toString();
+  } catch (e) {
+    //console.log(e);
+  }
+};
+
 const bumper = (toVersion, addParams) => {
   const [l1, l2] = execSync(`npm version ${toVersion} ${addParams ?? ""}`)
     .toString()
@@ -110,6 +118,8 @@ export const releaser = (args) => {
     JSON.stringify({ ...versions, ...newVersions }, null, 2)
   );
   addChanges("update versions");
+
+  pushChanges();
 
   if (releaseNote) {
     writeFile("release-notes.md", releaseNote + EOL);
