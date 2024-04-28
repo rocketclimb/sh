@@ -1,6 +1,6 @@
 {
   "name": "@rocketclimb/sh",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Shared scripts",
   "bin": {
     "rocketclimb-sh": "bin/cli.js"
@@ -8,7 +8,7 @@
   "scripts": {
     "pub-patch": "npm version patch --force && npm publish"
   },
-  "devDependencies": {
+  "dependencies": {
     "minimist": "^1.2.8",
     "shelljs": "^0.8.5"
   },
