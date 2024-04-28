@@ -4,9 +4,14 @@ import { createHash } from "node:crypto";
 import { execSync } from "node:child_process";
 import { EXIT_CODES } from "./config.js";
 import { changelog, ROOT_PKG_NAME, ICONS_SCOPE_NAME } from "./changelog.js";
-import { RELEASE_MARKER, bumpVersion, writeFile, getLatestTag } from "./utils.js";
+import {
+  RELEASE_MARKER,
+  bumpVersion,
+  writeFile,
+  getLatestTag,
+} from "./utils.js";
 
-const LASTEST_VERSIONS_FILE = "./.latest-versions.json";
+const LASTEST_VERSIONS_FILE = "./.versions.json";
 
 const calculateFileHash = (filename) => {
   const data = fs.readFileSync(filename).toString();
@@ -37,14 +42,18 @@ const hashChangesOnPack = () => {
 
 const addChanges = (message) => {
   try {
-    execSync(`git add . && git commit -m "ci(changelog): ${message}" --no-verify`).toString();
+    execSync(
+      `git add . && git commit -m "ci(changelog): ${message}" --no-verify`
+    ).toString();
   } catch (e) {
     //console.log(e);
   }
 };
 
 const bumper = (toVersion, addParams) => {
-  const [l1, l2] = execSync(`npm version --git-tag-version false ${toVersion} ${addParams ?? ""}`)
+  const [l1, l2] = execSync(
+    `npm version --git-tag-version false ${toVersion} ${addParams ?? ""}`
+  )
     .toString()
     .trim()
     .split("\n");
@@ -52,13 +61,15 @@ const bumper = (toVersion, addParams) => {
 };
 
 export const releaser = (args) => {
-  const versions = JSON.parse(fs.readFileSync(LASTEST_VERSIONS_FILE).toString());
+  const versions = JSON.parse(
+    fs.readFileSync(LASTEST_VERSIONS_FILE).toString()
+  );
 
   const latestTag = getLatestTag();
 
   const {
     stdout: { newTag, releaseNote, packagesBumpType, repoBumpType },
-    code
+    code,
   } = changelog([latestTag, ...args]);
 
   let tagName = newTag;
@@ -72,9 +83,15 @@ export const releaser = (args) => {
 
   if (packagesBumpType?.icons || hashChangesOnPack()) {
     try {
-      const tag = process.env.PRE_RELEASE_TAG ? `-${process.env.PRE_RELEASE_TAG.trim()}` : "";
+      const tag = process.env.PRE_RELEASE_TAG
+        ? `-${process.env.PRE_RELEASE_TAG.trim()}`
+        : "";
       const { icons } = versions;
-      const updateTo = bumpVersion(icons, packagesBumpType.icons ?? "patch", true);
+      const updateTo = bumpVersion(
+        icons,
+        packagesBumpType.icons ?? "patch",
+        true
+      );
       bumper(`${updateTo}${tag} -w packages/icons`);
       newVersions[ICONS_SCOPE_NAME] = `${updateTo}${tag}`;
       tagName += RELEASE_MARKER;
@@ -88,7 +105,10 @@ export const releaser = (args) => {
     newVersions[ROOT_PKG_NAME] = bumper(repoBumpType);
   }
 
-  writeFile(LASTEST_VERSIONS_FILE, JSON.stringify({ ...versions, ...newVersions }, null, 2));
+  writeFile(
+    LASTEST_VERSIONS_FILE,
+    JSON.stringify({ ...versions, ...newVersions }, null, 2)
+  );
   addChanges("update versions");
 
   if (releaseNote) {
@@ -97,6 +117,6 @@ export const releaser = (args) => {
 
   return {
     stdout: tagName + EOL,
-    code: EXIT_CODES.SUCCESS
+    code: EXIT_CODES.SUCCESS,
   };
 };
