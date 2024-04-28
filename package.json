@@ -11,5 +11,8 @@
   },
   "author": "Jeferson Amorim",
   "license": "MIT",
-  "type": "module"
+  "type": "module",
+  "publishConfig": {
+    "access": "public"
+  }
 }
