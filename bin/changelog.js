@@ -4,7 +4,12 @@ import path from "node:path";
 import { execSync } from "node:child_process";
 import { sync as parser } from "conventional-commits-parser";
 import { EXIT_CODES } from "./config.js";
-import { bumpVersion, writeFile, getLatestTag, RELEASE_MARKER } from "./utils.js";
+import {
+  bumpVersion,
+  writeFile,
+  getLatestTag,
+  RELEASE_MARKER,
+} from "./utils.js";
 
 const REPO_LINK = "https://github.com/rocketclimb/rocketicons";
 
@@ -29,7 +34,7 @@ const typesOrder = new Set([
   "refactor",
   "test",
   "chore",
-  "other"
+  "other",
 ]);
 
 const typeLabels = {
@@ -41,7 +46,7 @@ const typeLabels = {
   test: "Test",
   chore: "Miscellaneous",
   other: "Other",
-  ci: "Continuous integration"
+  ci: "Continuous integration",
 };
 
 const extractPackageNameFromChangedFile = (changedFile) => {
@@ -59,7 +64,8 @@ const prepareScope = (scope) => (scope && `**${scope}** `) || "";
 const prepareSubject = (subject, references) => {
   if (references.length) {
     return references.reduce(
-      (reduced, { issue, raw }) => reduced.replace(raw, `[${raw}](${REPO_LINK}/issues/${issue})`),
+      (reduced, { issue, raw }) =>
+        reduced.replace(raw, `[${raw}](${REPO_LINK}/issues/${issue})`),
       subject
     );
   }
@@ -68,16 +74,25 @@ const prepareSubject = (subject, references) => {
 };
 
 const prepareAffects = (pkgName, affects) => {
-  if (pkgName !== ROOT_PKG_NAME || affects.filter((pkg) => pkg !== ROOT_PKG_NAME).length === 1) {
+  if (
+    pkgName !== ROOT_PKG_NAME ||
+    affects.filter((pkg) => pkg !== ROOT_PKG_NAME).length === 1
+  ) {
     return "";
   }
-  const affected = affects.map((pkg) => `[${pkg}](./packages/${pkg}/CHANGELOG.md)`);
+  const affected = [
+    ...new Set(
+      affects.map((pkg) => `[${pkg}](./packages/${pkg}/CHANGELOG.md)`)
+    ),
+  ];
 
   return ` [${affected.join(", ")}]`;
 };
 
 const getChangeLogFileName = (pkgName) =>
-  pkgName === ROOT_PKG_NAME ? CHANGELOG_FILE : path.join(PACKAGES_DIR, pkgName, CHANGELOG_FILE);
+  pkgName === ROOT_PKG_NAME
+    ? CHANGELOG_FILE
+    : path.join(PACKAGES_DIR, pkgName, CHANGELOG_FILE);
 
 const getPreviousChangelog = (infile) => fs.readFileSync(infile).toString();
 
@@ -111,7 +126,8 @@ export const changelog = (args) => {
   const addCommitInfo = (parsed, pkgName, type, commit) => {
     parsed[pkgName] = parsed[pkgName] || {};
     parsed[pkgName][type] = parsed[pkgName][type] || [];
-    parsed[pkgName][type].indexOf(commit) === -1 && parsed[pkgName][type].push(commit);
+    parsed[pkgName][type].indexOf(commit) === -1 &&
+      parsed[pkgName][type].push(commit);
   };
 
   const getBumpType = (checking, current) => {
@@ -134,7 +150,9 @@ export const changelog = (args) => {
       ({ parsed, current, repoBumpType, packagesBumpType }, commit) => {
         const isNewCommit = commitPattern.exec(commit);
         if (isNewCommit) {
-          const [short, message, hash] = commit.replace(commitPattern, "").split(FIELD_MARKER);
+          const [short, message, hash] = commit
+            .replace(commitPattern, "")
+            .split(FIELD_MARKER);
           current = { ...parser(message), short, hash, affects: [] };
           typesOrder.add(current.type);
         } else {
@@ -143,7 +161,10 @@ export const changelog = (args) => {
           const { type, scope } = current;
           addCommitInfo(parsed, pkgName, type, current);
           addCommitInfo(parsed, ROOT_PKG_NAME, type, current);
-          packagesBumpType[pkgName] = getBumpType(current.type, packagesBumpType[pkgName]);
+          packagesBumpType[pkgName] = getBumpType(
+            current.type,
+            packagesBumpType[pkgName]
+          );
           if (scope === ICONS_SCOPE_NAME) {
             addCommitInfo(parsed, ICONS_SCOPE_NAME, type, current);
             packagesBumpType[ICONS_SCOPE_NAME] = getBumpType(
@@ -161,19 +182,36 @@ export const changelog = (args) => {
 
   let releaseNote;
 
-  const newTag = bumpVersion(previousTag, repoBumpType).replace(RELEASE_MARKER, "");
+  const newTag = bumpVersion(previousTag, repoBumpType).replace(
+    RELEASE_MARKER,
+    ""
+  );
 
   Object.entries(parsed).forEach(([key, changes]) => {
-    let content = `## [${newTag}](https://github.com/rocketclimb/rocketicons/compare/${previousTag}...${newTag}) (${new Date().toISOString().split("T").shift()})${EOL}`;
+    let content = `## [${newTag}](https://github.com/rocketclimb/rocketicons/compare/${previousTag}...${newTag}) (${new Date()
+      .toISOString()
+      .split("T")
+      .shift()})${EOL}`;
     [...typesOrder].forEach((type) => {
       const iWantThis =
-        changes[type]?.filter(({ scope }) => !SCOPES_TO_IGNORE.includes(scope)) || [];
+        changes[type]?.filter(
+          ({ scope }) => !SCOPES_TO_IGNORE.includes(scope)
+        ) || [];
 
-      content += (iWantThis.length && `${EOL}### ${typeLabels[type]}${EOL}${EOL}`) || "";
+      content +=
+        (iWantThis.length && `${EOL}### ${typeLabels[type]}${EOL}${EOL}`) || "";
 
-      iWantThis.forEach(({ scope, subject, short, hash, references, affects }) => {
-        content += `- ${prepareScope(scope)}${prepareSubject(subject, references)}${prepareAffects(key, affects)} ([${short}](${REPO_LINK}/commit/${hash}))${EOL}`;
-      });
+      iWantThis.forEach(
+        ({ scope, subject, short, hash, references, affects }) => {
+          content += `- ${prepareScope(scope)}${prepareSubject(
+            subject,
+            references
+          )}${prepareAffects(
+            key,
+            affects
+          )} ([${short}](${REPO_LINK}/commit/${hash}))${EOL}`;
+        }
+      );
     });
     if (key === ROOT_PKG_NAME) {
       releaseNote = content.trim();
@@ -187,8 +225,8 @@ export const changelog = (args) => {
       newTag,
       releaseNote,
       repoBumpType,
-      packagesBumpType
+      packagesBumpType,
     },
-    code: EXIT_CODES.SUCCESS
+    code: EXIT_CODES.SUCCESS,
   };
 };
