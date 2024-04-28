@@ -30,9 +30,8 @@ const getPackHash = () => {
   return calculateFileHash(pkgName);
 };
 
-const hashChangesOnPack = () => {
+const hashChangesOnPack = (hash) => {
   const newHash = getPackHash();
-  const { hash } = versions;
   if (hash === newHash) {
     execSync(`rm -fR ${pkgName}`);
     return true;
@@ -81,7 +80,8 @@ export const releaser = (args) => {
       newVersions[pkgName] = bumper(type, `-w packages/${pkgName}`);
     });
 
-  if (packagesBumpType?.icons || hashChangesOnPack()) {
+  const { hash } = versions;
+  if (packagesBumpType?.icons || hashChangesOnPack(hash)) {
     try {
       const tag = process.env.PRE_RELEASE_TAG
         ? `-${process.env.PRE_RELEASE_TAG.trim()}`
