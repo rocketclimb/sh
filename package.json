@@ -1,0 +1,15 @@
+{
+  "name": "@rocketclimb/sh",
+  "version": "0.1.0",
+  "description": "Shared scripts",
+  "bin": {
+    "rocketicons-sh": "bin/cli.js"
+  },
+  "devDependencies": {
+    "minimist": "^1.2.8",
+    "shelljs": "^0.8.5"
+  },
+  "author": "Jeferson Amorim",
+  "license": "MIT",
+  "type": "module"
+}
