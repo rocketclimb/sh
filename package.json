@@ -5,6 +5,9 @@
   "bin": {
     "rocketclimb-sh": "bin/cli.js"
   },
+  "scripts": {
+    "pub-patch": "npm version patch --force && npm publish"
+  },
   "devDependencies": {
     "minimist": "^1.2.8",
     "shelljs": "^0.8.5"
@@ -14,5 +17,8 @@
   "type": "module",
   "publishConfig": {
     "access": "public"
+  },
+  "peerDependencies": {
+    "conventional-commits-parser": "^5.0.0"
   }
 }
