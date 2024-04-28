@@ -1,9 +1,9 @@
 {
   "name": "@rocketclimb/sh",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Shared scripts",
   "bin": {
-    "rocketicons-sh": "bin/cli.js"
+    "rocketclimb-sh": "bin/cli.js"
   },
   "devDependencies": {
     "minimist": "^1.2.8",
