@@ -50,9 +50,7 @@ const addChanges = (message) => {
 };
 
 const bumper = (toVersion, addParams) => {
-  const [l1, l2] = execSync(
-    `npm version --git-tag-version false ${toVersion} ${addParams ?? ""}`
-  )
+  const [l1, l2] = execSync(`npm version ${toVersion} ${addParams ?? ""}`)
     .toString()
     .trim()
     .split("\n");
@@ -100,6 +98,8 @@ export const releaser = (args) => {
       //console.log(e);
     }
   }
+
+  addChanges("update");
 
   if (packagesBumpType[ROOT_PKG_NAME]) {
     newVersions[ROOT_PKG_NAME] = bumper(repoBumpType);
