@@ -2,27 +2,27 @@ import { EOL } from "node:os";
 import fs from "node:fs";
 import { createHash } from "node:crypto";
 import { execSync } from "node:child_process";
-import { EXIT_CODES } from "./config.js";
 import { changelog, ROOT_PKG_NAME, ICONS_SCOPE_NAME } from "./changelog.js";
 import {
+  LASTEST_VERSIONS_FILE,
   RELEASE_MARKER,
+  COMMIT_SCOPE,
+  undoCurrentReleaserChanges,
+  getCurrentVersions,
   bumpVersion,
   writeFile,
   getLatestTag,
+  bumper,
+  pack,
+  addChanges,
+  pushChanges,
 } from "./utils.js";
-
-const LASTEST_VERSIONS_FILE = "./.versions.json";
 
 const calculateFileHash = (filename) => {
   const data = fs.readFileSync(filename).toString();
   const hash = createHash("md5");
   hash.update(data);
   return hash.digest("hex");
-};
-
-const pack = () => {
-  execSync("npm pack --silent -w packages/icons");
-  return execSync("ls -tU *.tgz | head -1").toString().trim();
 };
 
 const getPackHash = () => {
@@ -39,36 +39,10 @@ const hashChangesOnPack = (hash) => {
   return false;
 };
 
-const addChanges = (message) => {
-  try {
-    execSync(
-      `git add . && git commit -m "ci(changelog): ${message}" --no-verify`
-    ).toString();
-  } catch (e) {
-    //console.log(e);
-  }
-};
-
-const pushChanges = () => {
-  try {
-    execSync(`git push --no-verify`);
-  } catch (e) {
-    //console.log(e);
-  }
-};
-
-const bumper = (toVersion, addParams) => {
-  const [l1, l2] = execSync(`npm version ${toVersion} ${addParams ?? ""}`)
-    .toString()
-    .trim()
-    .split("\n");
-  return (l2 ?? l1).replace(/^v/, "").trim();
-};
-
 export const releaser = (args) => {
-  const versions = JSON.parse(
-    fs.readFileSync(LASTEST_VERSIONS_FILE).toString()
-  );
+  undoCurrentReleaserChanges();
+
+  const versions = getCurrentVersions();
 
   const latestTag = getLatestTag();
 
@@ -83,7 +57,7 @@ export const releaser = (args) => {
   Object.entries(packagesBumpType)
     .filter(([pkgName]) => ![ROOT_PKG_NAME, ICONS_SCOPE_NAME].includes(pkgName))
     .forEach(([pkgName, type]) => {
-      newVersions[pkgName] = bumper(type, `-w packages/${pkgName}`);
+      newVersions[pkgName] = bumper(type, `packages/${pkgName}`);
     });
 
   const { hash } = versions;
@@ -98,7 +72,7 @@ export const releaser = (args) => {
         packagesBumpType.icons ?? "patch",
         true
       );
-      bumper(`${updateTo}${tag} -w packages/icons`);
+      bumper(`${updateTo}${tag}`, "packages/icons");
       newVersions[ICONS_SCOPE_NAME] = `${updateTo}${tag}`;
       tagName += RELEASE_MARKER;
       versions.hash = getPackHash();
@@ -106,8 +80,6 @@ export const releaser = (args) => {
       //console.log(e);
     }
   }
-
-  addChanges("update");
 
   if (packagesBumpType[ROOT_PKG_NAME]) {
     newVersions[ROOT_PKG_NAME] = bumper(repoBumpType);
@@ -117,7 +89,8 @@ export const releaser = (args) => {
     LASTEST_VERSIONS_FILE,
     JSON.stringify({ ...versions, ...newVersions }, null, 2)
   );
-  addChanges("update versions");
+
+  addChanges(COMMIT_SCOPE, "bump packages versions and update changelog");
 
   pushChanges();
 
@@ -127,6 +100,6 @@ export const releaser = (args) => {
 
   return {
     stdout: tagName + EOL,
-    code: EXIT_CODES.SUCCESS,
+    code,
   };
 };

@@ -1,10 +1,14 @@
 import { EOL } from "node:os";
 import fs from "node:fs";
 import path from "node:path";
-import { execSync } from "node:child_process";
 import { sync as parser } from "conventional-commits-parser";
 import { EXIT_CODES } from "./config.js";
+
 import {
+  isInitialTag,
+  getCommits,
+  isNewCommit,
+  getCommitInfo,
   bumpVersion,
   writeFile,
   getLatestTag,
@@ -16,15 +20,10 @@ const REPO_LINK = "https://github.com/rocketclimb/rocketicons";
 export const PACKAGES_DIR = "packages";
 const CHANGELOG_FILE = "CHANGELOG.md";
 
-const COMMIT_MARKER = "##";
-const FIELD_MARKER = "|||";
-
 export const ROOT_PKG_NAME = "rocketclimb-icons";
 export const ICONS_SCOPE_NAME = "icons";
 
 const SCOPES_TO_IGNORE = ["changelog"];
-
-const commitPattern = new RegExp(`^${COMMIT_MARKER}`);
 
 const typesOrder = new Set([
   "feat",
@@ -49,6 +48,10 @@ const typeLabels = {
   ci: "Continuous integration",
 };
 
+const getChangeLogTitle = (newTag, diff) => {
+  return diff ? `[${newTag}](${REPO_LINK}/compare/${diff})` : newTag;
+};
+
 const extractPackageNameFromChangedFile = (changedFile) => {
   const [, pkgName] = changedFile.split("/");
   return pkgName;
@@ -59,7 +62,7 @@ const getPackageName = (changedFile) =>
     ? extractPackageNameFromChangedFile(changedFile)
     : ROOT_PKG_NAME;
 
-const prepareScope = (scope) => (scope && `**${scope}** `) || "";
+const prepareScope = (scope) => (scope ? `**${scope}** ` : "");
 
 const prepareSubject = (subject, references) => {
   if (references.length) {
@@ -70,23 +73,21 @@ const prepareSubject = (subject, references) => {
     );
   }
 
-  return subject;
+  return subject || "";
 };
 
 const prepareAffects = (pkgName, affects) => {
-  if (
-    pkgName !== ROOT_PKG_NAME ||
-    affects.filter((pkg) => pkg !== ROOT_PKG_NAME).length === 1
-  ) {
+  const filteredAffects = affects.filter((pkg) => pkg !== ROOT_PKG_NAME);
+  if (pkgName !== ROOT_PKG_NAME || filteredAffects.length === 1) {
     return "";
   }
   const affected = [
     ...new Set(
-      affects.map((pkg) => `[${pkg}](./packages/${pkg}/CHANGELOG.md)`)
+      filteredAffects.map((pkg) => `[${pkg}](./packages/${pkg}/CHANGELOG.md)`)
     ),
   ];
 
-  return ` [${affected.join(", ")}]`;
+  return filteredAffects.length ? ` [${affected.join(", ")}]` : "";
 };
 
 const getChangeLogFileName = (pkgName) =>
@@ -118,10 +119,11 @@ const writeChangelog = (changelog, infile) => {
 
 export const changelog = (args) => {
   const [providedTag] = args;
-  const previousTag = providedTag ?? getLatestTag();
-  const newCommits = execSync(
-    `git --no-pager log  --name-only --pretty=format:"${COMMIT_MARKER}%h${FIELD_MARKER}%s${FIELD_MARKER}%H" ${previousTag}..HEAD`
-  );
+  const previousTag = providedTag || getLatestTag();
+
+  const commitsDiff = !isInitialTag(previousTag) ? `${previousTag}..HEAD` : "";
+
+  const newCommits = getCommits(commitsDiff);
 
   const addCommitInfo = (parsed, pkgName, type, commit) => {
     parsed[pkgName] = parsed[pkgName] || {};
@@ -148,11 +150,9 @@ export const changelog = (args) => {
     .filter((line) => !!line)
     .reduce(
       ({ parsed, current, repoBumpType, packagesBumpType }, commit) => {
-        const isNewCommit = commitPattern.exec(commit);
-        if (isNewCommit) {
-          const [short, message, hash] = commit
-            .replace(commitPattern, "")
-            .split(FIELD_MARKER);
+        if (isNewCommit(commit)) {
+          const [short, message, hash] = getCommitInfo(commit);
+
           current = { ...parser(message), short, hash, affects: [] };
           typesOrder.add(current.type);
         } else {
@@ -187,8 +187,12 @@ export const changelog = (args) => {
     ""
   );
 
+  const titleDiff = !isInitialTag(previousTag)
+    ? `${previousTag}...${newTag}`
+    : "";
+
   Object.entries(parsed).forEach(([key, changes]) => {
-    let content = `## [${newTag}](https://github.com/rocketclimb/rocketicons/compare/${previousTag}...${newTag}) (${new Date()
+    let content = `## ${getChangeLogTitle(newTag, titleDiff)} (${new Date()
       .toISOString()
       .split("T")
       .shift()})${EOL}`;
@@ -199,7 +203,9 @@ export const changelog = (args) => {
         ) || [];
 
       content +=
-        (iWantThis.length && `${EOL}### ${typeLabels[type]}${EOL}${EOL}`) || "";
+        (iWantThis.length &&
+          `${EOL}### ${typeLabels[type] ?? "Other"}${EOL}${EOL}`) ||
+        "";
 
       iWantThis.forEach(
         ({ scope, subject, short, hash, references, affects }) => {
