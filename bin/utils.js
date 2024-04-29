@@ -94,6 +94,10 @@ export const undoCurrentReleaserChanges = () => {
   ).split(FIELD_MARKER);
 
   if (subject && isCiChangeOnCurrentBrach(subject)) {
+    const files = execSyncToString(
+      `git show --pretty="" --name-only ${hash.trim()}`
+    ).split(EOL);
+
     const previousHash = execSyncToString(
       `git show --pretty="%H" --name-only ${hash.trim()}^1`
     )
