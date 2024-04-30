@@ -199,7 +199,11 @@ export const changelog = (args) => {
     : "";
 
   Object.entries(parsed).forEach(([key, changes]) => {
-    let content = "";
+    let content = `## ${getChangeLogTitle(
+      bumpVersion(versions[key], packagesBumpType[key]),
+      titleDiff
+    )} (${new Date().toISOString().split("T").shift()})${EOL}`;
+
     [...typesOrder].forEach((type) => {
       const iWantThis =
         changes[type]?.filter(
@@ -227,10 +231,6 @@ export const changelog = (args) => {
       releaseNote = content.trim();
     }
 
-    content = `## ${getChangeLogTitle(
-      bumpVersion(versions[key], packagesBumpType[key]),
-      titleDiff
-    )} (${new Date().toISOString().split("T").shift()})${EOL}${content}`;
     writeChangelog(content.trim(), getChangeLogFileName(key));
   });
 
