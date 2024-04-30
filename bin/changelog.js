@@ -5,6 +5,7 @@ import { sync as parser } from "conventional-commits-parser";
 import { EXIT_CODES } from "./config.js";
 
 import {
+  bumpVersion,
   isInitialTag,
   getCommits,
   isNewCommit,
@@ -108,18 +109,24 @@ const writeChangelog = (changelog, infile) => {
     // file does not exist, nothing to do here
   }
 
-  writeFile(
-    infile,
-    header +
-      (changelog ? changelog.trim() : "") +
-      (previousChangelog ? EOL + EOL + previousChangelog.trim() : "") +
-      EOL
-  );
+  try {
+    writeFile(
+      infile,
+      header +
+        (changelog ? changelog.trim() : "") +
+        (previousChangelog ? EOL + EOL + previousChangelog.trim() : "") +
+        EOL
+    );
+  } catch (err) {
+    // file does not exist, nothing to do here
+  }
 };
 
 export const changelog = (args) => {
   const [providedTag] = args;
   const previousTag = providedTag || getLatestTag();
+
+  const versions = getCurrentVersions();
 
   const commitsDiff = !isInitialTag(previousTag) ? `${previousTag}..HEAD` : "";
 
@@ -192,10 +199,7 @@ export const changelog = (args) => {
     : "";
 
   Object.entries(parsed).forEach(([key, changes]) => {
-    let content = `## ${getChangeLogTitle(newTag, titleDiff)} (${new Date()
-      .toISOString()
-      .split("T")
-      .shift()})${EOL}`;
+    let content = "";
     [...typesOrder].forEach((type) => {
       const iWantThis =
         changes[type]?.filter(
@@ -222,6 +226,11 @@ export const changelog = (args) => {
     if (key === ROOT_PKG_NAME) {
       releaseNote = content.trim();
     }
+
+    content = `## ${getChangeLogTitle(
+      bumpVersion(versions[key], packagesBumpType[key]),
+      titleDiff
+    )} (${new Date().toISOString().split("T").shift()})${EOL}${content}`;
     writeChangelog(content.trim(), getChangeLogFileName(key));
   });
 
