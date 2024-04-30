@@ -9,6 +9,7 @@ import {
   isInitialTag,
   getCommits,
   isNewCommit,
+  getCurrentVersions,
   getCommitInfo,
   writeFile,
   getLatestTag,
