@@ -10,7 +10,6 @@ import {
   getCommits,
   isNewCommit,
   getCommitInfo,
-  bumpVersion,
   writeFile,
   getLatestTag,
   RELEASE_MARKER,
