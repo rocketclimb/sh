@@ -70,7 +70,7 @@ const prepareSubject = (subject, references) => {
     return references.reduce(
       (reduced, { issue, raw }) =>
         reduced.replace(raw, `[${raw}](${REPO_LINK}/issues/${issue})`),
-      subject
+      subject || ""
     );
   }
 
