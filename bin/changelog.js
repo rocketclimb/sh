@@ -24,7 +24,7 @@ const CHANGELOG_FILE = "CHANGELOG.md";
 export const ROOT_PKG_NAME = "rocketclimb-icons";
 export const ICONS_SCOPE_NAME = "icons";
 
-const SCOPES_TO_IGNORE = ["changelog"];
+const SCOPES_TO_IGNORE = ["releaser", "no-changelog"];
 
 const typesOrder = new Set([
   "feat",
