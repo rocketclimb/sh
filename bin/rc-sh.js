@@ -5,7 +5,13 @@ import minimist from "minimist";
 import { printCmdRet } from "./print-cmd-ret.js";
 import { changelog } from "./changelog.js";
 import { releaser } from "./releaser.js";
-import { CMD_BLOCKLIST, EXIT_CODES, CONFIG_FILE, ADDITIONAL_CMD } from "./config.js";
+import { calculateDependenciesHash } from "./extract-dependencies.js";
+import {
+  CMD_BLOCKLIST,
+  EXIT_CODES,
+  CONFIG_FILE,
+  ADDITIONAL_CMD,
+} from "./config.js";
 
 shell.help = () => console.log("rocketicon-sh");
 
@@ -54,7 +60,9 @@ const recursiveRename = (args) => {
     const [src] = arg.split("/**/");
     shell.find(arg).forEach((file) => {
       const ext = path.extname(file);
-      const newFileName = file.replace(src, dest).replace(RegExp(`${ext}$`), newExt);
+      const newFileName = file
+        .replace(src, dest)
+        .replace(RegExp(`${ext}$`), newExt);
       ret = shell.cp("-f", file, newFileName);
     });
   }
@@ -64,7 +72,7 @@ const recursiveRename = (args) => {
 export function rcsh(argv) {
   const parsedArgs = minimist(argv.slice(2), {
     stopEarly: true,
-    boolean: true
+    boolean: true,
   });
 
   const [fnName, ...args] = parsedArgs._;
@@ -123,6 +131,9 @@ export function rcsh(argv) {
   } else if (fnName === "releaser") {
     const newArgs = convertSedRegex(args);
     ret = releaser(newArgs);
+  } else if (fnName === "extract-dependencies") {
+    const newArgs = convertSedRegex(args);
+    ret = calculateDependenciesHash(newArgs);
   } else {
     ret = shell[fnName].apply(input, args);
   }
@@ -131,7 +142,11 @@ export function rcsh(argv) {
   /* instanbul ignore next */
   let code = Object.prototype.hasOwnProperty.call(ret, "code") && ret.code;
 
-  if ((fnName === "pwd" || fnName === "which") && !ret.match(/\n$/) && ret.length > 1) {
+  if (
+    (fnName === "pwd" || fnName === "which") &&
+    !ret.match(/\n$/) &&
+    ret.length > 1
+  ) {
     ret += "\n";
   }
 
