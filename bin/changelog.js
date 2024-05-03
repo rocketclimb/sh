@@ -13,7 +13,6 @@ import {
   getCommitInfo,
   writeFile,
   getLatestTag,
-  RELEASE_MARKER,
 } from "./utils.js";
 
 const REPO_LINK = "https://github.com/rocketclimb/rocketicons";
@@ -189,9 +188,9 @@ export const changelog = (args) => {
 
   let releaseNote;
 
-  const newTag = bumpVersion(previousTag, repoBumpType).replace(
-    RELEASE_MARKER,
-    ""
+  const newTag = bumpVersion(
+    versions[ROOT_PKG_NAME],
+    packagesBumpType[ROOT_PKG_NAME]
   );
 
   const titleDiff = !isInitialTag(previousTag)
