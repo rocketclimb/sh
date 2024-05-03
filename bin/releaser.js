@@ -54,6 +54,12 @@ export const releaser = (args) => {
 
   const { hash } = versions;
   if (packagesBumpType?.icons || hasChangesOnPack(hash)) {
+    console.log(
+      packagesBumpType?.icons,
+      hasChangesOnPack(hash),
+      hash,
+      getPackHash()
+    );
     try {
       const tag = process.env.PRE_RELEASE_TAG
         ? `-${process.env.PRE_RELEASE_TAG.trim()}`
