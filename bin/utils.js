@@ -98,6 +98,10 @@ export const undoCurrentReleaserChanges = () => {
       `git show --pretty="" --name-only ${hash.trim()}`
     ).split(EOL);
 
+    if (!files.length) {
+      return;
+    }
+
     const previousHash = execSyncToString(
       `git show --pretty="%H" --name-only ${hash.trim()}^1`
     )
