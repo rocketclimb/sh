@@ -31,10 +31,7 @@ const getPackHash = () => {
 
 const hasChangesOnPack = (hash) => {
   const newHash = getPackHash();
-  if (hash === newHash) {
-    return true;
-  }
-  return false;
+  return hash !== newHash;
 };
 
 export const releaser = (args) => {
