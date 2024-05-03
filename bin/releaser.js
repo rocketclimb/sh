@@ -91,7 +91,7 @@ export const releaser = (args) => {
   }
 
   return {
-    stdout: tagName + EOL,
+    stdout: (newVersions[ROOT_PKG_NAME] && tagName) + EOL,
     code,
   };
 };
