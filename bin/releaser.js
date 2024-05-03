@@ -29,10 +29,7 @@ const getPackHash = () => {
   return calculateFileHash(pkgName);
 };
 
-const hasChangesOnPack = (hash) => {
-  const newHash = getPackHash();
-  return hash !== newHash;
-};
+const hasChangesOnPack = (hash) => getPackHash() !== hash;
 
 export const releaser = (args) => {
   undoCurrentReleaserChanges();
