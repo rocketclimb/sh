@@ -95,19 +95,14 @@ export const undoCurrentReleaserChanges = () => {
 
   if (subject && isCiChangeOnCurrentBrach(subject)) {
     const files = execSyncToString(
-      `git show --pretty="" --name-only ${hash.trim()}`
+      `git --no-pager show --pretty="" --name-only ${hash.trim()}`
     ).split(EOL);
 
     if (!files.length) {
       return;
     }
 
-    const previousHash = execSyncToString(
-      `git show --pretty="%H" --name-only ${hash.trim()}^1`
-    )
-      .split(EOL)
-      .shift()
-      .trim();
+    const previousHash = `${hash.trim()}^1`;
     execSyncWithNoError(`git checkout ${previousHash} -- ${files.join(" ")}`);
   }
 };

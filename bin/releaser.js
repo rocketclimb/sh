@@ -1,7 +1,6 @@
 import { EOL } from "node:os";
 import fs from "node:fs";
 import { createHash } from "node:crypto";
-import { execSync } from "node:child_process";
 import { changelog, ROOT_PKG_NAME, ICONS_SCOPE_NAME } from "./changelog.js";
 import {
   LASTEST_VERSIONS_FILE,
