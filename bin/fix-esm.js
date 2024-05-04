@@ -7,7 +7,7 @@ const fixEsmFile = (file) => {
   const content = fs.readFileSync(file, { encoding: "utf8" });
   fs.writeFileSync(
     file,
-    content.replace(/(import.*from "\.\/[\w|\/|-]+)";/g, '$1.mjs";'),
+    content.replace(/([import|export].*from "\.\/[\w|\/|-]+)";/g, '$1.mjs";'),
     { encoding: "utf8" }
   );
 };
