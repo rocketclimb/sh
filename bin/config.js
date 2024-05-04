@@ -24,7 +24,12 @@ export const OPTION_BLOCKLIST = [
   "maxdepth", // this option is undocumented, add this back if it makes sense
 ];
 
-export const ADDITIONAL_CMD = ["changelog", "releaser", "extract-dependencies"];
+export const ADDITIONAL_CMD = [
+  "changelog",
+  "releaser",
+  "extract-dependencies",
+  "fix-esm",
+];
 
 export const CONFIG_FILE = ".shxrc.json";
 

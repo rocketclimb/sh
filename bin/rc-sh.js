@@ -6,6 +6,7 @@ import { printCmdRet } from "./print-cmd-ret.js";
 import { changelog } from "./changelog.js";
 import { releaser } from "./releaser.js";
 import { calculateDependenciesHash } from "./extract-dependencies.js";
+import { fixEsm } from "./fix-esm.js";
 import {
   CMD_BLOCKLIST,
   EXIT_CODES,
@@ -134,6 +135,9 @@ export function rcsh(argv) {
   } else if (fnName === "extract-dependencies") {
     const newArgs = convertSedRegex(args);
     ret = calculateDependenciesHash(newArgs);
+  } else if (fnName === "fix-esm") {
+    const newArgs = convertSedRegex(args);
+    ret = fixEsm(newArgs);
   } else {
     ret = shell[fnName].apply(input, args);
   }
