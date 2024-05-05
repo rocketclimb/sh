@@ -9,7 +9,10 @@ const traverseDirectory = (dirPath, dependencies) => {
     if (fs.statSync(fullPath).isDirectory()) {
       traverseDirectory(fullPath, dependencies);
     } else if (path.basename(fullPath) === "package.json") {
-      extractDependencies(fullPath, dependencies);
+      const isNodeModules = fullPath.indexOf("node_modules") > -1;
+      if (!isNodeModules) {
+        extractDependencies(fullPath, dependencies);
+      }
     }
   });
 };
@@ -17,7 +20,7 @@ const traverseDirectory = (dirPath, dependencies) => {
 // Function to extract dependency sections from package.json
 const extractDependencies = (filePath, dependencies) => {
   try {
-    const packageJson = require(filePath);
+    const packageJson = JSON.parse(fs.readFileSync(filePath, "utf-8"));
     const allDependencies = {
       ...packageJson.dependencies,
       ...packageJson.devDependencies,
