@@ -54,12 +54,6 @@ export const releaser = (args) => {
 
   const { hash } = versions;
   if (packagesBumpType?.icons || hasChangesOnPack(hash)) {
-    console.log(
-      packagesBumpType?.icons,
-      hasChangesOnPack(hash),
-      hash,
-      getPackHash()
-    );
     try {
       const tag = process.env.PRE_RELEASE_TAG
         ? `-${process.env.PRE_RELEASE_TAG.trim()}`
@@ -70,6 +64,9 @@ export const releaser = (args) => {
         packagesBumpType.icons ?? "patch",
         true
       );
+
+      execSyncWithNoError("rm -fR *.tgz");
+
       bumper(`${updateTo}${tag}`, "packages/icons");
       newVersions[ICONS_SCOPE_NAME] = `${updateTo}${tag}`;
       tagName += RELEASE_MARKER;
