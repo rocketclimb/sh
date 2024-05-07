@@ -1,6 +1,7 @@
 import { EOL } from "node:os";
 import fs from "node:fs";
-import { execSync } from "node:child_process";
+import shelljs from "shelljs";
+//import { execSync } from "node:child_process";
 
 const COMMIT_MARKER = "##";
 const FIELD_MARKER = "|||";
@@ -18,7 +19,7 @@ const VERSION_MATCHER = /((?<major>\d+)\.)?((?<minor>\d+)\.)?(?<patch>\*|\d+)/;
 
 export const execSyncWithNoError = (cmd) => {
   try {
-    return execSync(cmd);
+    return shelljs.exec(cmd, { silent: true }).stdout;
   } catch (e) {
     //console.log(e);
   }
@@ -72,7 +73,7 @@ export const getLatestTag = () => {
 };
 
 export const getCommits = (diff) =>
-  execSync(
+  execSyncWithNoError(
     `git --no-pager log  --name-only --pretty=format:"${COMMIT_MARKER}%h${FIELD_MARKER}%s${FIELD_MARKER}%H" ${diff} || ''`
   );
 

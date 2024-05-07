@@ -15,6 +15,7 @@ import {
   pack,
   addChanges,
   pushChanges,
+  execSyncWithNoError,
 } from "./utils.js";
 
 const calculateFileHash = (filename) => {
@@ -53,6 +54,7 @@ export const releaser = (args) => {
     });
 
   const { hash } = versions;
+
   if (packagesBumpType?.icons || hasChangesOnPack(hash)) {
     try {
       const tag = process.env.PRE_RELEASE_TAG
@@ -65,7 +67,9 @@ export const releaser = (args) => {
         true
       );
 
-      execSyncWithNoError("rm -fR *.tgz");
+      execSyncWithNoError(
+        "ls *.tgz > /dev/null && rm -fR *.tgz || echo 'no tgz'"
+      );
 
       bumper(`${updateTo}${tag}`, "packages/icons");
       newVersions[ICONS_SCOPE_NAME] = `${updateTo}${tag}`;
