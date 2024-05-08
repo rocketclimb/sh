@@ -1,6 +1,7 @@
 import { EOL } from "node:os";
 import fs from "node:fs";
 import { createHash } from "node:crypto";
+
 import { changelog, ROOT_PKG_NAME, ICONS_SCOPE_NAME } from "./changelog.js";
 import {
   LASTEST_VERSIONS_FILE,
@@ -16,6 +17,8 @@ import {
   addChanges,
   pushChanges,
   execSyncWithNoError,
+  getCurrentPackages,
+  getCurrentBranch,
 } from "./utils.js";
 
 const calculateFileHash = (filename) => {
@@ -32,8 +35,14 @@ const getPackHash = () => {
 
 const hasChangesOnPack = (hash) => getPackHash() !== hash;
 
+const getPackageName = (pkgName, packages) =>
+  packages.find((fullName) => new RegExp(`.*\/${pkgName}$`).exec(fullName));
+
 export const releaser = (args) => {
-  undoCurrentReleaserChanges();
+  const currentPackages = getCurrentPackages();
+  const currentBranch = getCurrentBranch();
+
+  undoCurrentReleaserChanges(currentPackages, currentBranch);
 
   const versions = getCurrentVersions();
 
@@ -50,7 +59,11 @@ export const releaser = (args) => {
   Object.entries(packagesBumpType)
     .filter(([pkgName]) => ![ROOT_PKG_NAME, ICONS_SCOPE_NAME].includes(pkgName))
     .forEach(([pkgName, type]) => {
-      newVersions[pkgName] = bumper(type, `packages/${pkgName}`);
+      const fullPkgName = getPackageName(pkgName, currentPackages);
+      if (fullPkgName) {
+        const newVersion = bumpVersion(versions[pkgName], type, true);
+        newVersions[pkgName] = bumper(newVersion, fullPkgName);
+      }
     });
 
   const { hash } = versions;
@@ -81,7 +94,8 @@ export const releaser = (args) => {
   }
 
   if (packagesBumpType[ROOT_PKG_NAME]) {
-    newVersions[ROOT_PKG_NAME] = bumper(repoBumpType);
+    const newVersion = bumpVersion(versions[ROOT_PKG_NAME], repoBumpType, true);
+    newVersions[ROOT_PKG_NAME] = bumper(newVersion);
   }
 
   writeFile(

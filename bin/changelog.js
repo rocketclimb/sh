@@ -14,6 +14,7 @@ import {
   writeFile,
   getLatestTag,
   RELEASE_MARKER,
+  INITIAL_VERSION,
 } from "./utils.js";
 
 const REPO_LINK = "https://github.com/rocketclimb/rocketicons";
@@ -200,7 +201,7 @@ export const changelog = (args) => {
 
   Object.entries(parsed).forEach(([key, changes]) => {
     let content = `## ${getChangeLogTitle(
-      bumpVersion(versions[key], packagesBumpType[key]),
+      bumpVersion(versions[key] ?? INITIAL_VERSION, packagesBumpType[key]),
       titleDiff
     )} (${new Date().toISOString().split("T").shift()})${EOL}`;
 

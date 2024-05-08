@@ -1,17 +1,18 @@
 import { EOL } from "node:os";
 import fs from "node:fs";
 import shelljs from "shelljs";
-//import { execSync } from "node:child_process";
 
 const COMMIT_MARKER = "##";
 const FIELD_MARKER = "|||";
 
 export const COMMIT_SCOPE = "releaser";
 export const LASTEST_VERSIONS_FILE = "./.versions.json";
+export const CHANGELOG_FILE = "CHANGELOG.md";
 
 const commitPattern = new RegExp(`^${COMMIT_MARKER}`);
 
-export const INITIAL_TAG = "v0.0.0";
+export const INITIAL_VERSION = "0.0.0";
+export const INITIAL_TAG = `v${INITIAL_VERSION}`;
 
 export const RELEASE_MARKER = "-release";
 
@@ -21,7 +22,7 @@ export const execSyncWithNoError = (cmd) => {
   try {
     return shelljs.exec(cmd, { silent: true }).stdout;
   } catch (e) {
-    //console.log(e);
+    shelljs.echo(e);
   }
 };
 
@@ -85,31 +86,44 @@ export const getCommitInfo = (commit) =>
 export const getCurrentBranch = () =>
   execSyncToString(`git rev-parse --abbrev-ref HEAD`).trim();
 
-const isCiChangeOnCurrentBrach = (subject) =>
-  subject.startsWith(`ci(${COMMIT_SCOPE})`) &&
-  subject.includes(getCurrentBranch());
+const isCiChangeOnCurrentBrach = (subject, currentBranch) =>
+  subject.startsWith(`ci(${COMMIT_SCOPE})`) && subject.includes(currentBranch);
 
-export const undoCurrentReleaserChanges = () => {
-  const [subject, hash] = execSyncToString(
-    `git --no-pager log --format="%s${FIELD_MARKER}%H" -1 -- ${LASTEST_VERSIONS_FILE}`
-  ).split(FIELD_MARKER);
+export const undoCurrentReleaserChanges = (packages, currentBranch) => {
+  const sanitize = (hash) => hash.replace(/.\n.*/g, "").trim();
 
-  if (subject && isCiChangeOnCurrentBrach(subject)) {
-    const files = execSyncToString(
-      `git --no-pager show --pretty="" --name-only ${hash.trim()}`
-    ).split(EOL);
+  const search = [
+    LASTEST_VERSIONS_FILE,
+    ...packages.map((pkg) => `./${pkg}/${CHANGELOG_FILE}`),
+  ];
 
-    if (!files.length) {
-      return;
-    }
+  const toRevert = search
+    .map((file) => {
+      const [subject, hash] = execSyncToString(
+        `git --no-pager log --format="%s${FIELD_MARKER}%H" -- ${LASTEST_VERSIONS_FILE}`
+      ).split(FIELD_MARKER);
 
-    const previousHash = `${hash.trim()}^1`;
-    execSyncWithNoError(`git checkout ${previousHash} -- ${files.join(" ")}`);
-  }
+      return (
+        subject &&
+        isCiChangeOnCurrentBrach(subject, currentBranch) && {
+          file,
+          hash: sanitize(hash),
+        }
+      );
+    })
+    .filter((revert) => !!revert);
+
+  toRevert.forEach(({ file, hash }) => {
+    const previousHash = `${hash}^1`;
+    execSyncWithNoError(`git checkout ${previousHash} -- ${file}`);
+  });
 };
 
 export const getCurrentVersions = () =>
   JSON.parse(fs.readFileSync(LASTEST_VERSIONS_FILE).toString());
+
+export const getCurrentPackages = () =>
+  JSON.parse(fs.readFileSync("./package.json").toString())?.workspaces || [];
 
 export const addChanges = (type, message) =>
   execSyncToString(
