@@ -62,7 +62,8 @@ export const releaser = (args) => {
       const fullPkgName = getPackageName(pkgName, currentPackages);
       if (fullPkgName) {
         const newVersion = bumpVersion(versions[pkgName], type, true);
-        newVersions[pkgName] = bumper(newVersion, fullPkgName);
+        bumper(newVersion, fullPkgName);
+        newVersions[pkgName] = newVersion;
       }
     });
 
@@ -95,7 +96,8 @@ export const releaser = (args) => {
 
   if (packagesBumpType[ROOT_PKG_NAME]) {
     const newVersion = bumpVersion(versions[ROOT_PKG_NAME], repoBumpType, true);
-    newVersions[ROOT_PKG_NAME] = bumper(newVersion);
+    bumper(newVersion);
+    newVersions[ROOT_PKG_NAME] = newVersion;
   }
 
   writeFile(
