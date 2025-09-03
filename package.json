@@ -1,6 +1,6 @@
 {
   "name": "@rocketclimb/sh",
-  "version": "0.1.32",
+  "version": "0.1.33",
   "description": "Shared scripts",
   "bin": {
     "rocketclimb-sh": "bin/cli.js"
